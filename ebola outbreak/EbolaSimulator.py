@@ -12,7 +12,7 @@ class EbolaSimulator(object):
     """
     self.alpha = parameters['alpha']
     self.beta = parameters['beta']
-    self.eta = parameters['eta']
+    #self.eta = parameters['eta']
 
     self.graph = graph
 
@@ -69,7 +69,8 @@ class EbolaSimulator(object):
             if self.states[edge]['status'] == 'infected':
               Ni += 1
 
-          prob = self.beta - self.eta*Ni
+          #prob = self.beta - self.eta*Ni
+          prob = self.beta
           if np.random.rand() <= prob:
             update[k]['status'] = 'removed'
             update[k]['value'] = copy.copy(self.states[k]['value'])
