@@ -12,6 +12,7 @@ class EbolaSimulator(object):
     """
     self.alpha = parameters['alpha']
     self.beta = parameters['beta']
+    #self.dbeta = parameters['dbeta']
     #self.eta = parameters['eta']
 
     self.graph = graph
@@ -64,12 +65,12 @@ class EbolaSimulator(object):
       # check if location stabilizes 
       elif self.states[k]['status'] == 'infected':
         if k in action:
-          Ni = 0
-          for edge in self.graph[k]['edges']:
-            if self.states[edge]['status'] == 'infected':
-              Ni += 1
-
+          #Ni = 0
+          #for edge in self.graph[k]['edges']:
+          #  if self.states[edge]['status'] == 'infected':
+          #    Ni += 1
           #prob = self.beta - self.eta*Ni
+
           prob = self.beta
           if np.random.rand() <= prob:
             update[k]['status'] = 'removed'
