@@ -42,6 +42,8 @@ class EbolaSimulator(object):
     if self.end:
       print('process has terminated')
 
+    terminate = True
+
     update = {}
     for k in self.graph.keys():
       update[k] = {}
@@ -58,6 +60,7 @@ class EbolaSimulator(object):
         if np.random.rand() <= prob:
           update[k]['status'] = 'infected'
           update[k]['value'] = 1
+          terminate = False
         else:
           update[k]['status'] = 'susceptible'
           update[k]['value'] = 0
@@ -78,10 +81,12 @@ class EbolaSimulator(object):
           else:
             update[k]['status'] = 'infected'
             update[k]['value'] = copy.copy(self.states[k]['value']) + 1
+            terminate = False
 
         else:
           update[k]['status'] = 'infected'
           update[k]['value'] = copy.copy(self.states[k]['value']) + 1
+          terminate = False
 
       # absorbing states do not change
       else:
@@ -92,8 +97,6 @@ class EbolaSimulator(object):
       self.states[k] = copy.copy(update[k])
 
     self.iter += 1
-    if self.iter == 122:
+    # if self.iter == 122:
+    if terminate:
       self.end = True
-
-
-
