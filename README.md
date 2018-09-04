@@ -1,1 +1,1 @@
-# large-scale-GMDPs
+# control-large-GMDPs
