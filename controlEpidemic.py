@@ -101,8 +101,8 @@ if __name__ == '__main__':
     graph = pickle.load(file)
     file.close()
 
-    outbreak = {('guinea', 'gueckedou'): 1}
-    sim = WestAfrica(graph, outbreak, eta=defaultdict(lambda: 0.14))
+    outbreak = {('guinea', 'gueckedou'): 1, ('sierra leone', 'kailahun'): 1, ('liberia', 'lofa'): 1}
+    sim = WestAfrica(graph, outbreak, region_model='linear', eta=defaultdict(lambda: 0.14))
 
     dt_batch = []
     for s in range(1000):
