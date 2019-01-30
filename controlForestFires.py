@@ -21,8 +21,8 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     number_neighbors = 4
     fj = {i: None for i in range(number_neighbors)}
 
-    def reward(tree_state, number_healthy_numbers):
-        return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_numbers
+    def reward(tree_state, number_healthy_neighbors):
+        return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_neighbors
 
     phi = Variable()
     weights = Variable(3)
@@ -122,7 +122,7 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
         return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_numbers
 
     phi = Variable()
-    weights = Variable(4)
+    weights = Variable(3)
 
     objective = Minimize(phi)
     constraints = []
@@ -131,15 +131,15 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
         for hi in range(number_neighbors+1):
             for fi in range(number_neighbors+1-hi):
 
-                basis = weights[0] + weights[1]*(state == healthy) + weights[2]*(state == on_fire) \
-                        + weights[3]*(state == burnt)
+                basis = weights[0]*(state == healthy) + weights[1]*(state == on_fire) \
+                        + weights[2]*(state == burnt)
 
                 for apply_control in [False, True]:
                     control = (0, delta_beta) if apply_control else (0, 0)
 
-                    expected_basis = weights[0] + weights[1]*tree.dynamics((state, fi, healthy), control) \
-                                     + weights[2]*tree.dynamics((state, fi, on_fire), control) \
-                                     + weights[3]*tree.dynamics((state, fi, burnt), control)
+                    expected_basis = weights[0]*tree.dynamics((state, fi, healthy), control) \
+                                     + weights[1]*tree.dynamics((state, fi, on_fire), control) \
+                                     + weights[2]*tree.dynamics((state, fi, burnt), control)
 
                     constraints += [phi >= basis - reward(state, hi) - gamma*expected_basis]
                     constraints += [phi >= -basis + reward(state, hi) + gamma*expected_basis]
@@ -160,11 +160,11 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
 
 
 def prior_controller(simulation, delta_beta=0.54, gamma=0.95, capacity=4):
-    weights = [-29.145708, 3.25556387, -2.78261299, -1.63443674]
+    weights = [-25.89014413, -31.92832099, -30.78014474]
     action = []
 
     for fire in simulation.fires:
-        value = gamma*delta_beta*(weights[3]-weights[2])
+        value = gamma*delta_beta*(weights[2]-weights[1])
         action.append((value, fire))
 
     action = sorted(action, key=lambda x: x[0], reverse=True)[:capacity]
