@@ -19,6 +19,7 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
 
     tree = Tree(alpha, beta, model='linear')
     number_neighbors = 4
+    fj = {i: None for i in range(number_neighbors)}
 
     def reward(tree_state, number_healthy_numbers):
         return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_numbers
@@ -32,14 +33,9 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     for state in tree.state_space:
 
         if state in [healthy, on_fire]:
-            # for j in range(3**number_neighbors):
-                # xj = np.base_repr(j, base=3).zfill(number_neighbors)
 
             for hi in range(number_neighbors+1):
                 for fi in range(number_neighbors+1-hi):
-                    # bi = 4 - hi - fi
-                    # hi = xj.count(str(healthy))
-                    # fi = xj.count(str(on_fire))
 
                     basis = weights[0] + weights[1]*(state == healthy) + weights[2]*(state == on_fire)*hi
 
@@ -47,7 +43,6 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
                     for k in range(2**neighbors_of_hi):
                         xk = np.base_repr(k, base=2).zfill(2*number_neighbors)
 
-                        fj = {i: None for i in range(number_neighbors)}
                         fj[3] = xk[0:3].count(str(active))
                         fj[2] = xk[2:5].count(str(active))
                         fj[1] = xk[4:7].count(str(active))
@@ -85,6 +80,34 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     print(weights.value)
 
     return weights.value
+
+
+def new_controller(simulation, delta_beta=0.54, gamma=0.95, capacity=4):
+    weights = [-24.6317755, 5.18974134, -1.37294744]
+    action = []
+
+    for fire in simulation.fires:
+        element = simulation.group[fire]
+
+        value = -weights[2]*delta_beta*gamma
+
+        neighbor_sum = 0
+        for n in element.neighbors:
+            neighbor = simulation.group[n]
+            if neighbor.is_healthy(neighbor.state):
+                neighbor.query_neighbors(simulation.group)
+                fj = neighbor.neighbors_states.count(True)
+                neighbor_sum += neighbor.dynamics((neighbor.healthy, fj, neighbor.healthy))
+
+        value *= neighbor_sum
+
+        action.append((value, fire))
+
+    action = sorted(action, key=lambda x: x[0], reverse=True)[:capacity]
+    action = [x[1] for x in action]
+    action = {x: (0, delta_beta) if x in action else (0, 0) for x in simulation.group.keys()}
+
+    return action
 
 
 def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
@@ -136,17 +159,55 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     return weights.value
 
 
-if __name__ == '__main__':
-    new_weights = solve_tree_alp()
+def prior_controller(simulation, delta_beta=0.54, gamma=0.95, capacity=4):
+    weights = [-29.145708, 3.25556387, -2.78261299, -1.63443674]
+    action = []
 
+    for fire in simulation.fires:
+        value = gamma*delta_beta*(weights[3]-weights[2])
+        action.append((value, fire))
+
+    action = sorted(action, key=lambda x: x[0], reverse=True)[:capacity]
+    action = [x[1] for x in action]
+    action = {x: (0, delta_beta) if x in action else (0, 0) for x in simulation.group.keys()}
+
+    return action
+
+
+def run_simulation(simulation, method='prior'):
+
+    while not simulation.end:
+
+        action = None
+        if method == 'prior':
+            action = prior_controller(simulation)
+        elif method == 'new':
+            action = new_controller(simulation)
+
+        simulation.update(action)
+
+    return simulation.stats
+
+
+if __name__ == '__main__':
+    # new_weights = solve_tree_alp()
     # prior_weights = solve_priorwork_alp()
 
-    # weights = [-24.63177549, 5.18974134, -1.37294744]
-    # counter = 0
-    # for hi in range(5):
-    #     for fi in range(5-hi):
-    #         bi = 4 - hi - fi
-    #         print(hi, fi, bi, hi+fi+bi)
-    #         counter += 1
-    #
-    # print(counter)
+    sim = LatticeForest(50, tree_model='linear')
+    control_method = 'new'
+
+    stats_batch = []
+    for seed in range(100):
+        np.random.seed(seed)
+        sim.rng = seed
+        sim.reset()
+
+        stats = run_simulation(sim, method=control_method)
+        stats_batch.append(stats[0]/np.sum(stats))
+
+        if (seed+1) % 100 == 0:
+            print('completed %d simulations' % (seed+1))
+
+    print('method: %s' % control_method)
+    print('mean healthy trees [percent]: %0.4f' % (np.mean(stats_batch)*100))
+    print('median healthy trees [percent]: %0.4f' % (np.median(stats_batch)*100))
