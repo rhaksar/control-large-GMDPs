@@ -10,7 +10,7 @@ from epidemics.RegionElements import Region
 from epidemics.WestAfrica import WestAfrica
 
 
-def solve_region_alp(eta=0.14, nu=0.12, gamma=0.9):
+def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
 
     region = Region(eta, model='linear')
     number_neighbors = 4
@@ -30,12 +30,12 @@ def solve_region_alp(eta=0.14, nu=0.12, gamma=0.9):
     constraints = []
     for xi_t in region.state_space:
         for j in range(3**number_neighbors):
-            for action in [0, 1]:
+            for apply_control in [False, True]:
                 xj_t = np.base_repr(j, base=3).zfill(number_neighbors)
                 number_healthy_neighbors = xj_t.count(str(region.healthy))
                 number_infected_neighbors = xj_t.count(str(region.infected))
 
-                control = (0, nu) if action == 1 else (0, 0)
+                control = (0, delta_nu) if apply_control else (0, 0)
 
                 expected_reward = 0
                 for xi_tp1 in region.state_space:
@@ -62,7 +62,8 @@ def solve_region_alp(eta=0.14, nu=0.12, gamma=0.9):
     return weights.value
 
 
-def controller(simulation, weights, delta_nu=0.12, capacity=3):
+def controller(simulation, delta_nu=0.12, capacity=3):
+    weights = [-0.20321269, 9.99989824, -9.19026325, 0.02976983]
     action = []
     for name in simulation.group.keys():
 
@@ -84,10 +85,10 @@ def controller(simulation, weights, delta_nu=0.12, capacity=3):
     return action
 
 
-def run_simulation(simulation, weights):
+def run_simulation(simulation):
 
     while not simulation.end:
-        action = controller(simulation, weights)
+        action = controller(simulation)
         simulation.update(action)
 
     return [simulation.counter[name] for name in sim.group.keys()]
@@ -95,7 +96,6 @@ def run_simulation(simulation, weights):
 
 if __name__ == '__main__':
     # weights = solve_region_alp()
-    weights = [-0.20321269,  9.99989824, -9.19026325,  0.02976983]
 
     file = open('simulators/west_africa_graph.pkl', 'rb')
     graph = pickle.load(file)
@@ -105,15 +105,13 @@ if __name__ == '__main__':
     sim = WestAfrica(graph, outbreak, region_model='linear', eta=defaultdict(lambda: 0.14))
 
     dt_batch = []
-    for s in range(1000):
-        seed = 1000 + s
+    for seed in range(1000):
         np.random.seed(seed)
         sim.rng = seed
         sim.reset()
 
-        dt = run_simulation(sim, weights)
+        dt = run_simulation(sim)
         dt_batch.append(np.median(dt))
 
-    print(np.amin(dt_batch))
-    print(np.median(dt_batch))
-    print(np.amax(dt_batch))
+    print('mean infection time [weeks]: %0.4f' % np.mean(dt_batch))
+    print('median infection time [weeks]: %0.4f' % np.median(dt_batch))
