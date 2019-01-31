@@ -21,5 +21,6 @@ Paper citation:
 - Requires the [simulators](https://github.com/rhaksar/simulators) repository: clone the repository into the root level of this repository 
 
 ### Files
+- `alp_forestfires_details.pdf`: Notes on implementing the approximate linear program for the forest fires example. 
 - `controlEpidemic.py`: Solves an approximate linear program to estimate the Q-function and implements the resulting controller.
 - `controlForestFires.py`: Solves an apprxoimate linaer program to estimate the value function and implements the resulting controller. Also implements a method from literature. 
