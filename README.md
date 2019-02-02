@@ -1,6 +1,6 @@
 # control-large-GMDPs
 
-A repository to support the paper [Controlling Large, Graph-based MDPs with Global Control Capacity Constraints: An Approximate LP Solution](https://ieeexplore.ieee.org/document/8618745).
+A repository to support the paper [Controlling Large, Graph-based MDPs with Global Control Capacity Constraints: An Approximate LP Solution](https://msl.stanford.edu/sites/g/files/sbiybj8446/f/haksar_cdc2018_0.pdf).
 
 Paper citation:
 ```
@@ -16,8 +16,8 @@ Paper citation:
 ```
 
 ### Requirements
-- Written for Python 3.5
-- Requires `numpy` and `cvxpy` packages
+- Developed with Python 3.5
+- Requires `numpy` and [`cvxpy`](https://www.cvxpy.org/) packages
 - Requires the [simulators](https://github.com/rhaksar/simulators) repository: clone the repository into the root level of this repository 
 
 ### Files
