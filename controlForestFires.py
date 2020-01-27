@@ -1,11 +1,12 @@
 from collections import defaultdict
-from cvxpy import *
+import cvxpy as cp
 import numpy as np
 import os
 import sys
 import time
 
-sys.path.append(os.getcwd() + '/simulators')
+base_path = os.path.dirname(os.getcwd())
+sys.path.insert(0, base_path + '/simulators')
 from fires.ForestElements import Tree
 from fires.LatticeForest import LatticeForest
 
@@ -24,10 +25,10 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     def reward(tree_state, number_healthy_neighbors):
         return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_neighbors
 
-    phi = Variable()
-    weights = Variable(3)
+    phi = cp.Variable()
+    weights = cp.Variable(3)
 
-    objective = Minimize(phi)
+    objective = cp.Minimize(phi)
     constraints = []
 
     for state in tree.state_space:
@@ -67,11 +68,11 @@ def solve_tree_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
             constraints += [phi >= weights[0] - gamma*weights[0]]
             constraints += [phi >= -weights[0] + gamma*weights[0]]
 
-    alp = Problem(objective, constraints)
+    alp = cp.Problem(objective, constraints)
     print('Approximate Linear Program for single Tree')
     print('number of constraints: %d' % len(constraints))
     tic = time.clock()
-    alp.solve(solver=ECOS)
+    alp.solve(solver=cp.ECOS)
     toc = time.clock()
     print('completed in %0.2fs = %0.2fm' % (toc-tic, (toc-tic)/60))
     print('problem status: %s' % alp.status)
@@ -121,10 +122,10 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
     def reward(tree_state, number_healthy_numbers):
         return (tree_state == healthy) - (tree_state == on_fire)*number_healthy_numbers
 
-    phi = Variable()
-    weights = Variable(3)
+    phi = cp.Variable()
+    weights = cp.Variable(3)
 
-    objective = Minimize(phi)
+    objective = cp.Minimize(phi)
     constraints = []
 
     for state in tree.state_space:
@@ -144,11 +145,11 @@ def solve_priorwork_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
                     constraints += [phi >= basis - reward(state, hi) - gamma*expected_basis]
                     constraints += [phi >= -basis + reward(state, hi) + gamma*expected_basis]
 
-    alp = Problem(objective, constraints)
+    alp = cp.Problem(objective, constraints)
     print('Approximate Linear Program from prior work')
     print('number of constraints: %d' % len(constraints))
     tic = time.clock()
-    alp.solve(solver=ECOS)
+    alp.solve(solver=cp.ECOS)
     toc = time.clock()
     print('completed in %0.2fs = %0.2fm' % (toc-tic, (toc-tic)/60))
     print('problem status: %s' % alp.status)

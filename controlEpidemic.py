@@ -1,11 +1,12 @@
 from collections import defaultdict
-from cvxpy import *
+import cvxpy as cp
 import numpy as np
 import os
 import pickle
 import sys
 
-sys.path.append(os.getcwd() + '/simulators')
+base_path = os.path.dirname(os.getcwd())
+sys.path.insert(0, base_path + '/simulators')
 from epidemics.RegionElements import Region
 from epidemics.WestAfrica import WestAfrica
 
@@ -23,10 +24,10 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
             reward -= 1
         return reward
 
-    weights = Variable(4)
-    phi = Variable()
+    weights = cp.Variable(4)
+    phi = cp.Variable()
 
-    objective = Minimize(phi)
+    objective = cp.Minimize(phi)
     constraints = []
     for xi_t in region.state_space:
         for j in range(3**number_neighbors):
@@ -45,12 +46,12 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
                 bias = weights[0] + weights[1]*region.is_healthy(xi_t) + weights[2]*region.is_infected(xi_t)
                 control_effect = weights[3]*region.is_infected(xi_t)*number_healthy_neighbors
 
-                constraints += [phi >= bias + action*control_effect - expected_reward - gamma*bias]
-                constraints += [phi >= expected_reward + gamma*bias - bias - action*control_effect]
+                constraints += [phi >= bias + apply_control*control_effect - expected_reward - gamma*bias]
+                constraints += [phi >= expected_reward + gamma*bias - bias - apply_control*control_effect]
                 constraints += [phi >= expected_reward + gamma*bias + gamma*control_effect - bias
-                                - action*control_effect]
+                                - apply_control*control_effect]
 
-    alp = Problem(objective, constraints)
+    alp = cp.Problem(objective, constraints)
     print('Approximate Linear Program for single Region')
     print('number of constraints: %d' % len(constraints))
     alp.solve()
@@ -97,7 +98,7 @@ def run_simulation(simulation):
 if __name__ == '__main__':
     # weights = solve_region_alp()
 
-    file = open('simulators/west_africa_graph.pkl', 'rb')
+    file = open(base_path + '/simulators/west_africa_graph.pkl', 'rb')
     graph = pickle.load(file)
     file.close()
 

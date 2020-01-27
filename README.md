@@ -16,9 +16,9 @@ Paper citation:
 ```
 
 ### Requirements
-- Developed with Python 3.5
+- Developed with Python 3.6
 - Requires [`cvxpy`](https://www.cvxpy.org/) and `numpy` packages
-- Requires the [simulators](https://github.com/rhaksar/simulators) repository: clone the repository into the root level of this repository 
+- Requires the [simulators](https://github.com/rhaksar/simulators) repository 
 
 ### Files
 - `alp_forestfires_details.pdf`: Notes on implementing the approximate linear program for the forest fires example. 
