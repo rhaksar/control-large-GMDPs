@@ -1,14 +1,12 @@
 from collections import defaultdict
 import cvxpy as cp
 import numpy as np
-import os
 import pickle
-import sys
+import pkgutil
 
-base_path = os.path.dirname(os.getcwd())
-sys.path.insert(0, base_path + '/simulators')
-from epidemics.RegionElements import Region
-from epidemics.WestAfrica import WestAfrica
+
+from simulators.epidemics.RegionElements import Region
+from simulators.epidemics.WestAfrica import WestAfrica
 
 
 def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
@@ -20,7 +18,7 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
         reward = 0
         if region_state == region.healthy:
             reward += 1
-        elif region_next_state == region.infected:
+        if region_next_state == region.infected:
             reward -= 1
         return reward
 
@@ -53,10 +51,10 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
 
     alp = cp.Problem(objective, constraints)
     print('Approximate Linear Program for single Region')
-    print('number of constraints: %d' % len(constraints))
+    print('number of constraints: {0:d}'.format(len(constraints)))
     alp.solve()
-    print('problem status: %s' % alp.status)
-    print('error: %e' % phi.value)
+    print('problem status: {0}'.format(alp.status))
+    print('error: {0:0.2f}'.format(phi.value))
     print('weight(s): ')
     print(weights.value)
 
@@ -64,7 +62,7 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
 
 
 def controller(simulation, delta_nu=0.12, capacity=3):
-    weights = [-0.20321269, 9.99989824, -9.19026325, 0.02976983]
+    weights = [-0.05215494, 7.2515494, -9.42372431, 0.03041379]
     action = []
     for name in simulation.group.keys():
 
@@ -98,15 +96,15 @@ def run_simulation(simulation):
 if __name__ == '__main__':
     # weights = solve_region_alp()
 
-    file = open(base_path + '/simulators/west_africa_graph.pkl', 'rb')
-    graph = pickle.load(file)
-    file.close()
+    # get graph for simulator
+    data = pkgutil.get_data('simulators', 'epidemics/west_africa_graph.pkl')
+    graph = pickle.loads(data)
 
     outbreak = {('guinea', 'gueckedou'): 1, ('sierra leone', 'kailahun'): 1, ('liberia', 'lofa'): 1}
     sim = WestAfrica(graph, outbreak, region_model='linear', eta=defaultdict(lambda: 0.14))
 
     dt_batch = []
-    for seed in range(1000):
+    for seed in range(100):
         np.random.seed(seed)
         sim.rng = seed
         sim.reset()
@@ -114,5 +112,5 @@ if __name__ == '__main__':
         dt = run_simulation(sim)
         dt_batch.append(np.median(dt))
 
-    print('mean infection time [weeks]: %0.4f' % np.mean(dt_batch))
-    print('median infection time [weeks]: %0.4f' % np.median(dt_batch))
+    print('mean infection time [weeks]: {0:0.2f}'.format(np.mean(dt_batch)))
+    print('median infection time [weeks]: {0:0.2f}'.format(np.median(dt_batch)))
