@@ -1,20 +1,13 @@
-from collections import defaultdict
 import cvxpy as cp
 import numpy as np
-import os
-import sys
 import time
 
-base_path = os.path.dirname(os.getcwd())
-sys.path.insert(0, base_path + '/simulators')
-from fires.ForestElements import Tree
-from fires.LatticeForest import LatticeForest
+from simulators.fires.ForestElements import Tree
+from simulators.fires.LatticeForest import LatticeForest
 
 
 def solve_tree_Vw_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
-    healthy = 0
-    on_fire = 1
-    burnt = 2
+    healthy, on_fire, burnt = 0, 1, 2
 
     active = 1
 
@@ -70,13 +63,13 @@ def solve_tree_Vw_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
 
     alp = cp.Problem(objective, constraints)
     print('Approximate Linear Program for single Tree')
-    print('number of constraints: %d' % len(constraints))
+    print('number of constraints: {0:d}'.format(len(constraints)))
     tic = time.clock()
     alp.solve(solver=cp.ECOS)
     toc = time.clock()
-    print('completed in %0.2fs = %0.2fm' % (toc-tic, (toc-tic)/60))
-    print('problem status: %s' % alp.status)
-    print('error: %0.2f' % phi.value)
+    print('completed in {0:0.2f}s = {1:0.2f}m'.format(toc-tic, (toc-tic)/60))
+    print('problem status: {0}'.format(alp.status))
+    print('error: {0:0.2f}'.format(phi.value))
     print('weight(s): ')
     print(weights.value)
 
@@ -145,13 +138,13 @@ def solve_tree_Qw_alp(alpha=0.2, beta=0.9, delta_beta=0.54, gamma=0.95):
 
     alp = cp.Problem(objective, constraints)
     print('Approximate Qw Linear Program for single Tree')
-    print('number of constraints: %d' % len(constraints))
+    print('number of constraints: {0:d}'.format(len(constraints)))
     tic = time.clock()
     alp.solve(solver=cp.ECOS)
     toc = time.clock()
-    print('completed in %0.2fs = %0.2fm' % (toc-tic, (toc-tic)/60))
-    print('problem status: %s' % alp.status)
-    print('error: %e' % phi.value)
+    print('completed in {0:0.2f}s = {1:0.2f}m'.format(toc-tic, (toc-tic)/60))
+    print('problem status: {0}'.format(alp.status))
+    print('error: {0:0.2f}'.format(phi.value))
     print('weight(s): ')
     print(weights.value)
 
@@ -301,7 +294,7 @@ if __name__ == '__main__':
     # new_weights = solve_tree_Qw_alp()
 
     sim = LatticeForest(50, tree_model='linear')
-    control_method = 'new_q'
+    control_method = 'new_v'
 
     stats_batch = []
     for seed in range(100):
@@ -315,6 +308,6 @@ if __name__ == '__main__':
         if (seed+1) % 100 == 0:
             print('completed %d simulations' % (seed+1))
 
-    print('method: %s' % control_method)
-    print('mean healthy trees [percent]: %0.4f' % (np.mean(stats_batch)*100))
-    print('median healthy trees [percent]: %0.4f' % (np.median(stats_batch)*100))
+    print('method: {0}'.format(control_method))
+    print('mean healthy trees [percent]: {0:0.2f}'.format(np.mean(stats_batch)*100))
+    print('median healthy trees [percent]: {0:0.2f}'.format(np.median(stats_batch)*100))
