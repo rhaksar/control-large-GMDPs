@@ -1,6 +1,6 @@
 # control-large-GMDPs
 
-A repository to support the paper [Controlling Large, Graph-based MDPs with Global Control Capacity Constraints: An Approximate LP Solution](https://msl.stanford.edu/sites/g/files/sbiybj8446/f/haksar_cdc2018.pdf).
+A repository to support the paper **Controlling Large, Graph-based MDPs with Global Control Capacity Constraints: An Approximate LP Solution**.
 
 Paper citation:
 ```
