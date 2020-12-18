@@ -1,16 +1,23 @@
 from collections import defaultdict
 import cvxpy as cp
 import numpy as np
-import pickle
-import pkgutil
-
 
 from simulators.epidemics.RegionElements import Region
 from simulators.epidemics.WestAfrica import WestAfrica
 
 
 def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
+    """
+    Solve a linear program to approximate the state-action function for a single Region.
 
+    :param eta: virus spread parameter.
+    :param delta_nu: control effectiveness parameter.
+    :param gamma: discount factor.
+
+    :return: weights of the basis function parameterization of the value function for a single Region.
+    """
+
+    # dynamics and reward function definitions
     region = Region(eta, model='linear')
     number_neighbors = 4
 
@@ -25,6 +32,7 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
     weights = cp.Variable(4)
     phi = cp.Variable()
 
+    # iterate through combinations of region states and region neighbor's states
     objective = cp.Minimize(phi)
     constraints = []
     for xi_t in region.state_space:
@@ -41,6 +49,7 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
                     probability = region.dynamics((xi_t, number_infected_neighbors, xi_tp1), control)
                     expected_reward += probability*reward(xi_t, xi_tp1)
 
+                # constraints based on Bellman operator approximations
                 bias = weights[0] + weights[1]*region.is_healthy(xi_t) + weights[2]*region.is_infected(xi_t)
                 control_effect = weights[3]*region.is_infected(xi_t)*number_healthy_neighbors
 
@@ -62,7 +71,19 @@ def solve_region_alp(eta=0.14, delta_nu=0.12, gamma=0.9):
 
 
 def controller(simulation, delta_nu=0.12, capacity=3):
+    """
+    Implementation of policy resulting from the basis function parameterization.
+
+    :param simulation: WestAfrica simulation object.
+    :param delta_nu: control effectiveness parameter.
+    :param capacity: maximum amount of control effort allowed per time step.
+
+    :return: dictionary describing the action. keys are the names of regions and values are (delta_eta, delta_nu)
+    indicating the control effort.
+    """
+    # weights are stored so that the ALP does not need to be solved repeatedly
     weights = [-0.05215494, 7.2515494, -9.42372431, 0.03041379]
+
     action = []
     for name in simulation.group.keys():
 
@@ -85,6 +106,9 @@ def controller(simulation, delta_nu=0.12, capacity=3):
 
 
 def run_simulation(simulation):
+    """
+    Run a simulation with the control policy, and return the length of time each Region spent in the infected state.
+    """
 
     while not simulation.end:
         action = controller(simulation)
@@ -94,15 +118,14 @@ def run_simulation(simulation):
 
 
 if __name__ == '__main__':
+    # compute the weights of the state-action function parameterization
     # weights = solve_region_alp()
 
-    # get graph for simulator
-    data = pkgutil.get_data('simulators', 'epidemics/west_africa_graph.pkl')
-    graph = pickle.loads(data)
-
+    # initial conditoins
     outbreak = {('guinea', 'gueckedou'): 1, ('sierra leone', 'kailahun'): 1, ('liberia', 'lofa'): 1}
-    sim = WestAfrica(graph, outbreak, region_model='linear', eta=defaultdict(lambda: 0.14))
+    sim = WestAfrica(outbreak, region_model='linear', eta=defaultdict(lambda: 0.14))
 
+    # run many simulations and report statistics
     dt_batch = []
     for seed in range(100):
         np.random.seed(seed)
